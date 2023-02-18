@@ -1,0 +1,19 @@
+[tool.poetry]
+name = "python-mysql"
+version = "0.1.0"
+description = ""
+authors = ["davilos <daviloscostagg@hotmail.com>"]
+readme = "README.md"
+packages = [{include = "python_mysql"}]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+blue = "^0.9.1"
+isort = "^5.12.0"
+mysqlclient = "^2.1.1"
+rich = "^13.3.1"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
