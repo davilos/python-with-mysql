@@ -1,5 +1,4 @@
 import sys
-from typing import Union
 
 import MySQLdb
 from MySQLdb.connections import Connection
@@ -9,11 +8,11 @@ from rich.prompt import Prompt
 from rich.table import Table
 
 CONEXAO: Connection
-CONS = Console()
-PROMPT = Prompt()
+CONS: Console = Console()
+PROMPT: Prompt = Prompt()
 
 
-def menu():
+def menu() -> None:
     """
     Função para gerar o menu inicial
     """
@@ -31,7 +30,7 @@ def menu():
 
     while True:
         try:
-            opcao = input('\033[32m\n-> : \033[m')
+            opcao: str = input('\033[32m\n-> : \033[m')
             match opcao:
                 case '1':
                     listar()
@@ -44,7 +43,7 @@ def menu():
                 case 'm' | 'menu' | 'M' | 'Menu':
                     menu()
                 case '5':
-                    sair = input('Para confirmar o encerramento digite "0": ')
+                    sair: str = input('Para confirmar o encerramento digite "0": ')
                     match sair:
                         case '0':
                             desconectar()
@@ -133,7 +132,7 @@ def inserir() -> None:
 
     try:
         CONS.print()
-        nome: Union[str, ValueError] = get_name()
+        nome: str | ValueError = get_name()
         preco: float = float(input('Informe o preço do produto: '))
         estoque: int = int(input('Informe a quantidade em estoque: '))
         CONS.print()
@@ -163,7 +162,7 @@ def atualizar() -> None:
     try:
         CONS.print()
         codigo: int = int(input('Informe o código do produto: '))
-        nome: Union[str, ValueError] = get_name()
+        nome: str | ValueError = get_name()
         preco: float = float(input('Informe o novo preço do produto: '))
         estoque: int = int(input('Informe a nova quantidade em estoque: '))
 
