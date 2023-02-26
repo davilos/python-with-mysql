@@ -1,8 +1,14 @@
+import sys
+from typing import Union
+
 import MySQLdb
-from rich.table import Table
+from MySQLdb.connections import Connection
+from MySQLdb.cursors import Cursor
 from rich.console import Console
 from rich.prompt import Prompt
+from rich.table import Table
 
+CONEXAO: Connection
 CONS = Console()
 PROMPT = Prompt()
 
@@ -22,11 +28,10 @@ def menu():
     print('5 - Encerrar o programa')
     print('m/menu - Mostrar a tela de menu novamente')
     print('================================================')
-    CONS.print()
 
     while True:
         try:
-            opcao = input(f'-> : ')
+            opcao = input('\033[32m\n-> : \033[m')
             match opcao:
                 case '1':
                     listar()
@@ -36,31 +41,32 @@ def menu():
                     atualizar()
                 case '4':
                     deletar()
-                case 'm' | 'menu' | 'M':
+                case 'm' | 'menu' | 'M' | 'Menu':
                     menu()
                 case '5':
                     sair = input('Para confirmar o encerramento digite "0": ')
                     match sair:
                         case '0':
                             desconectar()
-                            exit()
+                            sys.exit()
                         case _:
                             continue
                 case _:
                     raise ValueError()
         except ValueError:
-            print('\033[31mOpção inválida, tente novamente!\033[m')
+            print('\033[31m\nOpção inválida, tente novamente!\033[m')
 
 
 def conectar() -> None:
     """
     Função para conectar ao servidor
     """
+    global CONEXAO
+
     try:
         user: str = input('Digite o seu usuário: ')
         password: str = PROMPT.ask('Digite a senha do usuário', password=True)
 
-        global CONEXAO
         CONEXAO = MySQLdb.connect(
             db='pmysql',
             host='127.0.0.1',
@@ -68,11 +74,11 @@ def conectar() -> None:
             user=user,
             passwd=password,
         )
-    except MySQLdb.Error as Error:
+    except MySQLdb.Error as error:
         print(
-            f'\033[31mErro ao tentar se conectar no MySQL Server\n{Error}\033[m'
+            f'\033[31mErro ao tentar se conectar no MySQL Server\n{error}\033[m'
         )
-        exit()
+        sys.exit()
     else:
         menu()
 
@@ -93,9 +99,9 @@ def listar() -> None:
     """
     Função para listar os produtos
     """
-    cursor = CONEXAO.cursor()
+    cursor: Cursor = CONEXAO.cursor()
     cursor.execute('SELECT * FROM produtos')
-    produtos = cursor.fetchall()
+    produtos: tuple = cursor.fetchall()
 
     if len(produtos) > 0:
         table = Table(title='Produtos cadastrados')
@@ -115,22 +121,21 @@ def listar() -> None:
 
         CONS.print()
         CONS.print(table)
-        CONS.print()
     else:
-        print('Ainda não existem produtos cadastrados!\n')
+        print('Ainda não existem produtos cadastrados!')
 
 
 def inserir() -> None:
     """
     Função para inserir um produto
     """
-    cursor = CONEXAO.cursor()
+    cursor: Cursor = CONEXAO.cursor()
 
     try:
         CONS.print()
-        nome = get_name()
-        preco = float(input('Informe o preço do produto: '))
-        estoque = int(input('Informe a quantidade em estoque: '))
+        nome: Union[str, ValueError] = get_name()
+        preco: float = float(input('Informe o preço do produto: '))
+        estoque: int = int(input('Informe a quantidade em estoque: '))
         CONS.print()
 
         cursor.execute(
@@ -138,35 +143,77 @@ def inserir() -> None:
         )
     except ValueError:
         print(
-            '\033[31mErro ao inserir produto, digite os valores corretos!\033[m\n'
+            '\033[31mErro ao inserir produto, digite os valores corretos!\033[m'
         )
     else:
         CONEXAO.commit()
 
         if cursor.rowcount == 1:
-            print(f'O produto \033[1m{nome}\033[m foi inserido com sucesso!\n')
+            print(f'O produto \033[1m{nome}\033[m foi inserido com sucesso!')
         else:
-            print('\033[31mNão foi possível inserir o produto.\033[m\n')
+            print('\033[31mNão foi possível inserir o produto.\033[m')
 
 
 def atualizar() -> None:
     """
     Função para atualizar um produto
     """
-    cursor = CONEXAO.cursor()
+    cursor: Cursor = CONEXAO.cursor()
+
+    try:
+        CONS.print()
+        codigo: int = int(input('Informe o código do produto: '))
+        nome: Union[str, ValueError] = get_name()
+        preco: float = float(input('Informe o novo preço do produto: '))
+        estoque: int = int(input('Informe a nova quantidade em estoque: '))
+
+        cursor.execute(
+            f"UPDATE produtos SET nome='{nome}', preco={preco}, estoque={estoque} WHERE id={codigo}"
+        )
+    except ValueError:
+        print(
+            '\033[31mErro ao atualizar produto, digite os valores corretos!\033[m'
+        )
+    else:
+        CONEXAO.commit()
+
+        if cursor.rowcount == 1:
+            print(f'O produto \033[1m{nome}\033[m foi atualizado com sucesso!')
+        else:
+            print('\033[31mNão foi possível atualizar o produto.\033[m')
 
 
 def deletar() -> None:
     """
     Função para deletar um produto
     """
-    cursor = CONEXAO.cursor()
+    cursor: Cursor = CONEXAO.cursor()
+
+    try:
+        CONS.print()
+        codigo: int = int(input('Informe o código do produto: '))
+
+        cursor.execute(f'DELETE FROM produtos WHERE id={codigo}')
+    except ValueError:
+        print(
+            '\033[31mErro ao deletar produto, digite os valores corretos!\033[m'
+        )
+    else:
+        CONEXAO.commit()
+
+        if cursor.rowcount == 1:
+            print('O produto foi deletado com sucesso!')
+        else:
+            print('\033[31mNão foi possível deletar o produto.\033[m')
 
 
 def get_name() -> str | ValueError:
-    nome: str = input('Informe o nome do produto: ')
+    """
+    Função para testar se o nome do produto que está sendo recebido não é uma string vazia.
+    """
+    nome: str = input('Informe o nome do produto: ').strip()
 
     if len(nome) > 0:
-        return nome.strip().title()
-    else:
-        raise ValueError()
+        return nome.title()
+
+    raise ValueError()
